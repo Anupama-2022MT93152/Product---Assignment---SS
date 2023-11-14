@@ -5,7 +5,7 @@ import requests
 app = Flask(__name__)
 
 # Connect to the database
-db = pymysql.connect(host="localhost", user="root", password="42519h", database="book_store")
+db = pymysql.connect(host="localhost", user="root", password="test1234", database="book_store")
 
 
 @app.route('/')
@@ -48,8 +48,8 @@ def order(user_name,title,author,price):
     return response.text    
 
 # Route to add/edit products Delete Module if not working
-@app.route('/manage_product/<int:product_id>', methods=['GET', 'POST'])
-def manage_product(product_id):
+@app.route('/manage_product/<int:id>', methods=['GET', 'POST'])
+def manage_product(id):
     cursor = db.cursor()
 
     if request.method == 'POST':
@@ -57,46 +57,43 @@ def manage_product(product_id):
         author = request.form['author']
         price = request.form['price']
         
-        if product_id == 0:
+        if id == 0:
             cursor.execute("INSERT INTO products (title, author, price) VALUES (%s, %s, %s)", (title, author, price))
         else:
-            cursor.execute("UPDATE products SET title=%s, author=%s, price=%s WHERE id=%s", (title, author, price, product_id))
+            cursor.execute("UPDATE products SET title=%s, author=%s, price=%s WHERE id=%s", (title, author, price, id))
         
-        pymysql.connection.commit()
+        db.commit()
         cursor.close()
         return redirect('/')
     
-    if product_id == 0:
+    if id == 0:
         return render_template('manage_product.html', product=None)
     else:
-        cursor.execute('SELECT * FROM products WHERE id = %s', (product_id,))
+        cursor.execute('SELECT * FROM products WHERE id = %s', (id,))
         product = cursor.fetchone()
         cursor.close()
         return render_template('manage_product.html', product=product)
 
 
-@app.route('/edit_product/<id>')
+@app.route('/edit_product/<id>', methods=['GET', 'POST'])
 def edit_product(id):
-    # Get the product with the specified ID
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM products WHERE id=%s", (id,))
+
+    if request.method == 'POST':
+        title = request.form['title']
+        author = request.form['author']
+        price = request.form['price']
+
+        cursor.execute("UPDATE products SET title=%s, author=%s, price=%s WHERE id=%s", (title, author, price, id))
+        db.commit()
+        cursor.close()
+        return redirect(url_for('index'))  # Use url_for to generate the correct URL
+
+    cursor.execute('SELECT * FROM products WHERE id = %s', (id,))
     product = cursor.fetchone()
+    cursor.close()
+    return render_template('edit_product.html', product=product)
 
-    return render_template("edit_product.html", product=product)
-
-@app.route('/update_product', methods=["POST"])
-def update_product():
-    # Update the product with the specified ID
-    id = request.form["id"]
-    title = request.form["title"]
-    author = request.form["author"]
-    price = request.form["price"]
-
-    cursor = db.cursor()
-    cursor.execute("UPDATE products SET title=%s, author=%s, price=%s WHERE id=%s", (title, author, price, id))
-    db.commit()
-
-    return redirect("/")
 
 @app.route('/delete_product/<id>')
 def delete_product(id):
