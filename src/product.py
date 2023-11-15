@@ -1,17 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for
-import pymysql
+import mysql.connector
 import requests
 
 app = Flask(__name__)
-
 # Connect to the database
-db = pymysql.connect(host="localhost", user="root", password="test1234", database="book_store")
-
-
+db_config = {
+    "host": "localhost", #Change localhost to mysql while deploying and running from docker
+    "user": "root",
+    "password": "test1234",
+    "database": "book_store"
+}
 @app.route('/')
 def index():
     # Get all products from the database
-    cursor = db.cursor()
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
     cursor.execute("SELECT id,title,author,price FROM products")
     # Fetch the product data using cursor.fetchall()
     products = cursor.fetchall()
@@ -27,7 +30,8 @@ def main_products():
     print(f'Login Microservice has passed Username {key1} to Product Microservice after successful Login')
     
     # Get all products from the database
-    cursor = db.cursor()
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
     cursor.execute("SELECT id,title,author,price FROM products")
     
     # Fetch the product data using cursor.fetchall()
@@ -50,7 +54,8 @@ def order(user_name,title,author,price):
 # Route to add/edit products Delete Module if not working
 @app.route('/manage_product/<int:id>', methods=['GET', 'POST'])
 def manage_product(id):
-    cursor = db.cursor()
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
 
     if request.method == 'POST':
         title = request.form['title']
@@ -62,7 +67,7 @@ def manage_product(id):
         else:
             cursor.execute("UPDATE products SET title=%s, author=%s, price=%s WHERE id=%s", (title, author, price, id))
         
-        db.commit()
+        connection.commit()
         cursor.close()
         return redirect('/')
     
@@ -77,7 +82,8 @@ def manage_product(id):
 
 @app.route('/edit_product/<id>', methods=['GET', 'POST'])
 def edit_product(id):
-    cursor = db.cursor()
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
 
     if request.method == 'POST':
         title = request.form['title']
@@ -85,7 +91,7 @@ def edit_product(id):
         price = request.form['price']
 
         cursor.execute("UPDATE products SET title=%s, author=%s, price=%s WHERE id=%s", (title, author, price, id))
-        db.commit()
+        connection.commit()
         cursor.close()
         return redirect(url_for('index'))  # Use url_for to generate the correct URL
 
@@ -98,12 +104,13 @@ def edit_product(id):
 @app.route('/delete_product/<id>')
 def delete_product(id):
     # Delete the product with the specified ID
-    cursor = db.cursor()
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
     cursor.execute("DELETE FROM products WHERE id=%s", (id,))
-    db.commit()
+    connection.commit()
 
     return redirect("/")
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(host="0.0.0.0", debug=True, port=5001)
 

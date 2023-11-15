@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\bkgan\Product---Assignment---SS\product-env
+set VIRTUAL_ENV=C:\Anupama\MTech\Sem3\Scalable_Services_Assignment\Product---Assignment---SS\product-env
 
 if not defined PROMPT set PROMPT=$P$G
 
